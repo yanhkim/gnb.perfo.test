@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>GNB perfomance test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0">
+    <script src="/appspresso/appspresso.js"></script>
+    <script>
+        //activate ax.log(), comment out when you release app
+        ax.runMode = ax.MODE_DEBUG;
+        ax.log("Hello World");
+    </script>
+</head>
+<body>
+
+<div class="page" id="page-list">
+    <header>
+        <h1>list</h1>
+    </header>
+    <section id="scroller">
+        <ul id="listview">
+        </ul>
+    </section>
+    <footer>
+        <h1>fps: <span id="fps">0.0</span></h1>
+    </footer>
+</div>
+
+<div class="page" id="page-detail">
+    <header>
+        <h1>detail</h1>
+    </header>
+    <section>
+    </section>
+</div>
+
+</body>
+</html>
