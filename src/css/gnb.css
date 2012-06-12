@@ -59,6 +59,11 @@ body {
 .page > header h1 {
     padding: 0 65px;
 }
+.page footer #fps {
+    width: 60px;
+    display: inline-block;
+    text-align: left;
+}
 .page > .scroller {
 	-webkit-box-flex: 1;
 	-moz-box-flex: 1;
@@ -72,6 +77,7 @@ body {
 	-webkit-box-orient: vertical;
 	-moz-box-orient: vertical;
 	box-orient: vertical;
+    position: relative;
 	height: 100%;
 }
 #listview {

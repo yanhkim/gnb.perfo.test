@@ -54,7 +54,8 @@ var $ = function(i) { return d.getElementById(i); },
 
         return t.render(data);
     },
-    loading = false;
+    loading = false,
+    masterScroll, detailScroll;
 
 function loadFeeds() {
     if (loading)
@@ -77,6 +78,21 @@ function loadFeeds() {
         $('listview').innerHTML = html;
 
         // TODO iscroll setup
+        masterScroll = new iScroll(d.querySelector('#page-master .scroller'), {
+            onAnimationStart: function() {
+                fpschecker.start();
+            },
+            onAnimation: function() {
+                var fps = fpschecker.tick();
+                if (!fps) {
+                    return;
+                }   
+                $('fps').textContent = Math.floor(fps * 100) / 100;
+            },
+            onAnimationEnd: function() {
+                fpschecker.end();
+            }
+        });
     });
 }
 
@@ -119,6 +135,10 @@ var currentView = null,
                 });
             }, 100);
         }
+        if (currentView === 'detail') {
+            detailScroll && detailScroll.destroy();
+            detailScroll = null;
+        }
         currentView = 'master';
     },
     '/detail/(\\d+)': function(id) {
@@ -128,6 +148,11 @@ var currentView = null,
 
         var detail = $('page-detail').querySelector('section');
         detail.innerHTML = tmpl('detail', myapi.flickritem(id));
+
+        detailScroll = new iScroll(detail);
+        detail.querySelector('img').onload = function() {
+            detailScroll.refresh();
+        };
 
         slide({
             appear: $('page-detail'),
