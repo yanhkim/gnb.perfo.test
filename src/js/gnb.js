@@ -72,6 +72,7 @@ function loadFeeds() {
         // to make loooooong list :$
         html = html + html;
         html = html + html;
+        html = html + html;
 
         $('listview').innerHTML = html;
 
@@ -110,6 +111,14 @@ var currentView = null,
             direction: 'ltr'
         });
 
+        // initial call ad hoc
+        if (currentView === null) {
+            g.setTimeout(function() {
+                [].slice.call(d.querySelectorAll('.page')).forEach(function(page) {
+                    page.addClass('transition');
+                });
+            }, 100);
+        }
         currentView = 'master';
     },
     '/detail/(\\d+)': function(id) {
@@ -118,7 +127,7 @@ var currentView = null,
         }
 
         var detail = $('page-detail').querySelector('section');
-        detail.innerHTML = myapi.flickritem(id);
+        detail.innerHTML = tmpl('detail', myapi.flickritem(id));
 
         slide({
             appear: $('page-detail'),

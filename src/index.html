@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <title>GNB perfomance test</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="css/gnb.css">
     <script src="/appspresso/appspresso.js"></script>
     <script>
         //activate ax.log(), comment out when you release app
@@ -15,9 +16,9 @@
 
 <div class="page" id="page-master">
     <header>
-        <h1>list</h1>
+        <h1>master page</h1>
     </header>
-    <section id="scroller">
+    <section class="scroller">
         <ul id="listview">
         </ul>
     </section>
@@ -29,10 +30,13 @@
 <div class="page" id="page-detail">
     <header>
         <a href="#/" class="header-back-button"><button>Back</button></a>
-        <h1>detail</h1>
+        <h1>detail page</h1>
     </header>
-    <section>
+    <section class="scroller">
     </section>
+    <footer>
+        <h1>foooooter</h1>
+    </footer>
 </div>
 
 <script src="js/libs.js"></script>
