@@ -10,7 +10,7 @@ var parse = g.ax ? ax.util.parseXML : function(s) {
 
 var xhr = (g.ax && g.ax.ext && g.ax.ext.net) ? g.ax.ext.net.get
     : function(url, cb) {
-        var _xhr = new XMLHttpReqeust();
+        var _xhr = new XMLHttpRequest();
         _xhr.onload = function() {
             cb(_xhr.responseText);
         };
@@ -19,7 +19,7 @@ var xhr = (g.ax && g.ax.ext && g.ax.ext.net) ? g.ax.ext.net.get
     };
 
 function Item(_item) {
-    this._item = item;
+    this._item = _item;
 }
 Item.prototype.content = function(sel) {
     return this._item.querySelector(sel).textContent;
@@ -38,7 +38,7 @@ function flickrfeeds(done) {
             return {
                 link: item.content('link'),
                 title: item.content('title'),
-                thumbnail: item.attr('thumbnail', 'src'),
+                thumbnail: item.attr('thumbnail', 'url'),
                 id: item.content('guid').split('/').pop(),
                 credit: item.content('credit'),
                 // dummy text...
