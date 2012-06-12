@@ -594,67 +594,7 @@ Router.prototype.mount = function(routes, path) {
 
 
 
-}(typeof process !== "undefined" && process.title ? module : window));(function(g) {
-
-'use strict';
-
-var feed_uri = 'http://api.flickr.com/services/feeds/photos_public.gne?format=rss_200';
-
-var parse = g.ax ? ax.util.parseXML : function(s) {
-    return new DOMParser().parseFromString(s, 'text/xml');
-};
-
-var xhr = (g.ax && g.ax.ext && g.ax.ext.net) ? g.ax.ext.net.get
-    : function(url, cb) {
-        var _xhr = new XMLHttpReqeust();
-        _xhr.onload = function() {
-            cb(_xhr.responseText);
-        };
-        _xhr.open('GET', url);
-        _xhr.send();
-    };
-
-function Item(_item) {
-    this._item = item;
-}
-Item.prototype.content = function(sel) {
-    return this._item.querySelector(sel).textContent;
-};
-Item.prototype.attr = function(sel, attr) {
-    return this._item.querySelector(sel).getAttribute(attr);
-};
-
-function flickrfeeds(done) {
-    xhr(feed_uri, function(data) {
-        var doc = parse(data),
-            items = [].slice.call(doc.querySelectorAll('item'));
-
-        done(items.map(function(item) {
-            item = new Item(item);
-            return {
-                link: item.content('link'),
-                title: item.content('title'),
-                thumbnail: item.attr('thumbnail', 'src'),
-                id: item.content('guid').split('/').pop(),
-                credit: item.content('credit'),
-                // dummy text...
-                description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean tempus lectus ut mauris pretium in aliquam tortor cursus.'
-            };
-        }));
-    });
-}
-
-function flickritem(id) {
-    return 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean tempus lectus ut mauris pretium in aliquam tortor cursus.';
-}
-
-g.myapi = {
-    flickrfeeds: flickrfeeds,
-    flickritem: flickritem
-};
-
-})(this);
-/*
+}(typeof process !== "undefined" && process.title ? module : window));/*
  *  Copyright 2011 Twitter, Inc.
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -672,15 +612,12 @@ g.myapi = {
 var Hogan = {};
 
 (function (Hogan, useArrayBuffer) {
-  Hogan.Template = function (codeObj, text, compiler, options) {
-    codeObj = codeObj || {};
-    this.r = codeObj.code || this.r;
+  Hogan.Template = function (renderFunc, text, compiler, options) {
+    this.r = renderFunc || this.r;
     this.c = compiler;
     this.options = options;
     this.text = text || '';
-    this.partials = codeObj.partials || {};
-    this.subs = codeObj.subs || {};
-    this.ib();
+    this.buf = (useArrayBuffer) ? [] : '';
   }
 
   Hogan.Template.prototype = {
@@ -702,43 +639,16 @@ var Hogan = {};
       return this.r(context, partials, indent);
     },
 
-    // ensurePartial
-    ep: function(symbol, partials) {
-      var partial = this.partials[symbol];
-
-      // check to see that if we've instantiated this partial before
-      var template = partials[partial.name];
-      if (partial.instance && partial.base == template) {
-        return partial.instance;
-      }
-
-      if (typeof template == 'string') {
-        if (!this.c) {
-          throw new Error("No compiler available.");
-        }
-        template = this.c.compile(template, this.options);
-      }
-
-      if (!template) {
-        return null;
-      }
-
-      // We use this to check whether the partials dictionary has changed
-      this.partials[symbol].base = template;
-
-      if (partial.subs) {
-        template = createSpecializedPartial(template, partial.subs, partial.partials, this.text);
-      }
-
-      this.partials[symbol].instance = template;
-      return template;
-    },
-
     // tries to find a partial in the curent scope and render it
-    rp: function(symbol, context, partials, indent) {
-      var partial = this.ep(symbol, partials);
+    rp: function(name, context, partials, indent) {
+      var partial = partials[name];
+
       if (!partial) {
         return '';
+      }
+
+      if (this.c && typeof partial == 'string') {
+        partial = this.c.compile(partial, this.options);
       }
 
       return partial.ri(context, partials, indent);
@@ -769,7 +679,7 @@ var Hogan = {};
       }
 
       if (typeof val == 'function') {
-        val = this.ms(val, ctx, partials, inverted, start, end, tags);
+        val = this.ls(val, ctx, partials, inverted, start, end, tags);
       }
 
       pass = (val === '') || !!val;
@@ -792,7 +702,7 @@ var Hogan = {};
       }
 
       for (var i = 1; i < names.length; i++) {
-        if (val && typeof val == 'object' && val[names[i]] != null) {
+        if (val && typeof val == 'object' && names[i] in val) {
           cx = val;
           val = val[names[i]];
         } else {
@@ -806,7 +716,7 @@ var Hogan = {};
 
       if (!returnFound && typeof val == 'function') {
         ctx.push(cx);
-        val = this.mv(val, ctx, partials);
+        val = this.lv(val, ctx, partials);
         ctx.pop();
       }
 
@@ -821,7 +731,7 @@ var Hogan = {};
 
       for (var i = ctx.length - 1; i >= 0; i--) {
         v = ctx[i];
-        if (v && typeof v == 'object' && v[key] != null) {
+        if (v && typeof v == 'object' && key in v) {
           val = v[key];
           found = true;
           break;
@@ -833,106 +743,67 @@ var Hogan = {};
       }
 
       if (!returnFound && typeof val == 'function') {
-        val = this.mv(val, ctx, partials);
+        val = this.lv(val, ctx, partials);
       }
 
       return val;
     },
 
     // higher order templates
-    ls: function(func, cx, partials, text, tags) {
-      var oldTags = this.options.delimiters;
-
-      this.options.delimiters = tags;
-      this.b(this.ct(coerceToString(func.call(cx, text)), cx, partials));
-      this.options.delimiters = oldTags;
-
+    ho: function(val, cx, partials, text, tags) {
+      var compiler = this.c;
+      var options = this.options;
+      options.delimiters = tags;
+      var text = val.call(cx, text);
+      text = (text == null) ? String(text) : text.toString();
+      this.b(compiler.compile(text, options).render(cx, partials));
       return false;
-    },
-
-    // compile text
-    ct: function(text, cx, partials) {
-      if (this.options.disableLambda) {
-        throw new Error('Lambda features disabled.');
-      }
-      return this.c.compile(text, this.options).render(cx, partials);
     },
 
     // template result buffering
     b: (useArrayBuffer) ? function(s) { this.buf.push(s); } :
                           function(s) { this.buf += s; },
-
     fl: (useArrayBuffer) ? function() { var r = this.buf.join(''); this.buf = []; return r; } :
                            function() { var r = this.buf; this.buf = ''; return r; },
-    // init the buffer
-    ib: function () {
-      this.buf = (useArrayBuffer) ? [] : '';
-    },
 
-    // method replace section
-    ms: function(func, ctx, partials, inverted, start, end, tags) {
-      var textSource,
-          cx = ctx[ctx.length - 1],
-          result = func.call(cx);
+    // lambda replace section
+    ls: function(val, ctx, partials, inverted, start, end, tags) {
+      var cx = ctx[ctx.length - 1],
+          t = null;
 
-      if (typeof result == 'function') {
+      if (!inverted && this.c && val.length > 0) {
+        return this.ho(val, cx, partials, this.text.substring(start, end), tags);
+      }
+
+      t = val.call(cx);
+
+      if (typeof t == 'function') {
         if (inverted) {
           return true;
-        } else {
-          textSource = (this.activeSub && this.subsText[this.activeSub]) ? this.subsText[this.activeSub] : this.text;
-          return this.ls(result, cx, partials, textSource.substring(start, end), tags);
+        } else if (this.c) {
+          return this.ho(t, cx, partials, this.text.substring(start, end), tags);
         }
       }
 
-      return result;
+      return t;
     },
 
-    // method replace variable
-    mv: function(func, ctx, partials) {
+    // lambda replace variable
+    lv: function(val, ctx, partials) {
       var cx = ctx[ctx.length - 1];
-      var result = func.call(cx);
+      var result = val.call(cx);
 
       if (typeof result == 'function') {
-        this.b(this.ct(coerceToString(result.call(cx)), cx, partials));
-        return null;
+        result = coerceToString(result.call(cx));
+        if (this.c && ~result.indexOf("{\u007B")) {
+          return this.c.compile(result, this.options).render(cx, partials);
+        }
       }
 
-      return result;
-    },
-
-    sub: function(name, context, partials, indent) {
-      var f = this.subs[name];
-      if (f) {
-        this.activeSub = name;
-        f(context, partials, this, indent);
-        this.activeSub = false;
-      }
+      return coerceToString(result);
     }
 
   };
-
-  function createSpecializedPartial(instance, subs, partials, childText) {
-    function PartialTemplate() {};
-    PartialTemplate.prototype = instance;
-    function Substitutions() {};
-    Substitutions.prototype = instance.subs;
-    var key;
-    var partial = new PartialTemplate();
-    partial.subs = new Substitutions();
-    partial.subsText = {};  //hehe. substext.
-    partial.ib();
-
-    for (key in subs) {
-      partial.subs[key] = subs[key];
-      partial.subsText[key] = childText;
-    }
-
-    for (key in partials) {
-      partial.partials[key] = partials[key];
-    }
-
-    return partial;
-  }
 
   var rAmp = /&/g,
       rLt = /</g,
@@ -940,6 +811,7 @@ var Hogan = {};
       rApos =/\'/g,
       rQuot = /\"/g,
       hChars =/[&<>\"\']/;
+
 
   function coerceToString(val) {
     return String((val === null || val === undefined) ? '' : val);
@@ -962,6 +834,67 @@ var Hogan = {};
   };
 
 })(typeof exports !== 'undefined' ? exports : Hogan);
+
+(function(g) {
+
+'use strict';
+
+var feed_uri = 'http://api.flickr.com/services/feeds/photos_public.gne?format=rss_200';
+
+var parse = g.ax ? ax.util.parseXML : function(s) {
+    return new DOMParser().parseFromString(s, 'text/xml');
+};
+
+var xhr = (g.ax && g.ax.ext && g.ax.ext.net) ? g.ax.ext.net.get
+    : function(url, cb) {
+        var _xhr = new XMLHttpRequest();
+        _xhr.onload = function() {
+            cb(_xhr.responseText);
+        };
+        _xhr.open('GET', url);
+        _xhr.send();
+    };
+
+function Item(_item) {
+    this._item = _item;
+}
+Item.prototype.content = function(sel) {
+    return this._item.querySelector(sel).textContent;
+};
+Item.prototype.attr = function(sel, attr) {
+    return this._item.querySelector(sel).getAttribute(attr);
+};
+
+function flickrfeeds(done) {
+    xhr(feed_uri, function(data) {
+        var doc = parse(data),
+            items = [].slice.call(doc.querySelectorAll('item'));
+
+        done(items.map(function(item) {
+            item = new Item(item);
+            return {
+                link: item.content('link'),
+                title: item.content('title'),
+                thumbnail: item.attr('thumbnail', 'url'),
+                id: item.content('guid').split('/').pop(),
+                credit: item.content('credit'),
+                // dummy text...
+                description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean tempus lectus ut mauris pretium in aliquam tortor cursus.'
+            };
+        }));
+    });
+}
+
+function flickritem(id) {
+    return 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean tempus lectus ut mauris pretium in aliquam tortor cursus.';
+}
+
+g.myapi = {
+    flickrfeeds: flickrfeeds,
+    flickritem: flickritem
+};
+
+})(this);
 (function(root, factory) {
   // Set up Tappable appropriately for the environment.
   if ( typeof define === 'function' && define.amd ) {
