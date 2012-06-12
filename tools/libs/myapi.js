@@ -2,21 +2,20 @@
 
 'use strict';
 
-var feed_uri = 'http://api.flickr.com/services/feeds/photos_public.gne?format=rss_200';
+var feed_uri = 'flickr.rss';
 
 var parse = g.ax ? ax.util.parseXML : function(s) {
     return new DOMParser().parseFromString(s, 'text/xml');
 };
 
-var xhr = (g.ax && g.ax.ext && g.ax.ext.net) ? function(url, cb) { g.ax.ext.net.get(url, function(o) { cb(o.data); }); }
-    : function(url, cb) {
-        var _xhr = new XMLHttpRequest();
-        _xhr.onload = function() {
-            cb(_xhr.responseText);
-        };
-        _xhr.open('GET', url);
-        _xhr.send();
+var xhr = function(url, cb) {
+    var _xhr = new XMLHttpRequest();
+    _xhr.onload = function() {
+        cb(_xhr.responseText);
     };
+    _xhr.open('GET', url);
+    _xhr.send();
+};
 
 function Item(_item) {
     this._item = _item;

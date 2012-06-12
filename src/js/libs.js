@@ -1,456 +1,4 @@
-/*
- *  Copyright 2011 Twitter, Inc.
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
 
-var Hogan = {};
-
-(function (Hogan, useArrayBuffer) {
-  Hogan.Template = function (renderFunc, text, compiler, options) {
-    this.r = renderFunc || this.r;
-    this.c = compiler;
-    this.options = options;
-    this.text = text || '';
-    this.buf = (useArrayBuffer) ? [] : '';
-  }
-
-  Hogan.Template.prototype = {
-    // render: replaced by generated code.
-    r: function (context, partials, indent) { return ''; },
-
-    // variable escaping
-    v: hoganEscape,
-
-    // triple stache
-    t: coerceToString,
-
-    render: function render(context, partials, indent) {
-      return this.ri([context], partials || {}, indent);
-    },
-
-    // render internal -- a hook for overrides that catches partials too
-    ri: function (context, partials, indent) {
-      return this.r(context, partials, indent);
-    },
-
-    // tries to find a partial in the curent scope and render it
-    rp: function(name, context, partials, indent) {
-      var partial = partials[name];
-
-      if (!partial) {
-        return '';
-      }
-
-      if (this.c && typeof partial == 'string') {
-        partial = this.c.compile(partial, this.options);
-      }
-
-      return partial.ri(context, partials, indent);
-    },
-
-    // render a section
-    rs: function(context, partials, section) {
-      var tail = context[context.length - 1];
-
-      if (!isArray(tail)) {
-        section(context, partials, this);
-        return;
-      }
-
-      for (var i = 0; i < tail.length; i++) {
-        context.push(tail[i]);
-        section(context, partials, this);
-        context.pop();
-      }
-    },
-
-    // maybe start a section
-    s: function(val, ctx, partials, inverted, start, end, tags) {
-      var pass;
-
-      if (isArray(val) && val.length === 0) {
-        return false;
-      }
-
-      if (typeof val == 'function') {
-        val = this.ls(val, ctx, partials, inverted, start, end, tags);
-      }
-
-      pass = (val === '') || !!val;
-
-      if (!inverted && pass && ctx) {
-        ctx.push((typeof val == 'object') ? val : ctx[ctx.length - 1]);
-      }
-
-      return pass;
-    },
-
-    // find values with dotted names
-    d: function(key, ctx, partials, returnFound) {
-      var names = key.split('.'),
-          val = this.f(names[0], ctx, partials, returnFound),
-          cx = null;
-
-      if (key === '.' && isArray(ctx[ctx.length - 2])) {
-        return ctx[ctx.length - 1];
-      }
-
-      for (var i = 1; i < names.length; i++) {
-        if (val && typeof val == 'object' && names[i] in val) {
-          cx = val;
-          val = val[names[i]];
-        } else {
-          val = '';
-        }
-      }
-
-      if (returnFound && !val) {
-        return false;
-      }
-
-      if (!returnFound && typeof val == 'function') {
-        ctx.push(cx);
-        val = this.lv(val, ctx, partials);
-        ctx.pop();
-      }
-
-      return val;
-    },
-
-    // find values with normal names
-    f: function(key, ctx, partials, returnFound) {
-      var val = false,
-          v = null,
-          found = false;
-
-      for (var i = ctx.length - 1; i >= 0; i--) {
-        v = ctx[i];
-        if (v && typeof v == 'object' && key in v) {
-          val = v[key];
-          found = true;
-          break;
-        }
-      }
-
-      if (!found) {
-        return (returnFound) ? false : "";
-      }
-
-      if (!returnFound && typeof val == 'function') {
-        val = this.lv(val, ctx, partials);
-      }
-
-      return val;
-    },
-
-    // higher order templates
-    ho: function(val, cx, partials, text, tags) {
-      var compiler = this.c;
-      var options = this.options;
-      options.delimiters = tags;
-      var text = val.call(cx, text);
-      text = (text == null) ? String(text) : text.toString();
-      this.b(compiler.compile(text, options).render(cx, partials));
-      return false;
-    },
-
-    // template result buffering
-    b: (useArrayBuffer) ? function(s) { this.buf.push(s); } :
-                          function(s) { this.buf += s; },
-    fl: (useArrayBuffer) ? function() { var r = this.buf.join(''); this.buf = []; return r; } :
-                           function() { var r = this.buf; this.buf = ''; return r; },
-
-    // lambda replace section
-    ls: function(val, ctx, partials, inverted, start, end, tags) {
-      var cx = ctx[ctx.length - 1],
-          t = null;
-
-      if (!inverted && this.c && val.length > 0) {
-        return this.ho(val, cx, partials, this.text.substring(start, end), tags);
-      }
-
-      t = val.call(cx);
-
-      if (typeof t == 'function') {
-        if (inverted) {
-          return true;
-        } else if (this.c) {
-          return this.ho(t, cx, partials, this.text.substring(start, end), tags);
-        }
-      }
-
-      return t;
-    },
-
-    // lambda replace variable
-    lv: function(val, ctx, partials) {
-      var cx = ctx[ctx.length - 1];
-      var result = val.call(cx);
-
-      if (typeof result == 'function') {
-        result = coerceToString(result.call(cx));
-        if (this.c && ~result.indexOf("{\u007B")) {
-          return this.c.compile(result, this.options).render(cx, partials);
-        }
-      }
-
-      return coerceToString(result);
-    }
-
-  };
-
-  var rAmp = /&/g,
-      rLt = /</g,
-      rGt = />/g,
-      rApos =/\'/g,
-      rQuot = /\"/g,
-      hChars =/[&<>\"\']/;
-
-
-  function coerceToString(val) {
-    return String((val === null || val === undefined) ? '' : val);
-  }
-
-  function hoganEscape(str) {
-    str = coerceToString(str);
-    return hChars.test(str) ?
-      str
-        .replace(rAmp,'&amp;')
-        .replace(rLt,'&lt;')
-        .replace(rGt,'&gt;')
-        .replace(rApos,'&#39;')
-        .replace(rQuot, '&quot;') :
-      str;
-  }
-
-  var isArray = Array.isArray || function(a) {
-    return Object.prototype.toString.call(a) === '[object Array]';
-  };
-
-})(typeof exports !== 'undefined' ? exports : Hogan);
-
-(function(root, factory) {
-  // Set up Tappable appropriately for the environment.
-  if ( typeof define === 'function' && define.amd ) {
-    // AMD
-    define('tappable', [], function() {
-      factory( root, window.document );
-      return root.tappable;
-    });
-  } else {
-    // Browser global scope
-    factory( root, window.document );
-  }
-}(this, function ( w, d ) {
-
-  var matchesSelector = function(node, selector){
-      var root = d.documentElement,
-        matches = root.matchesSelector || root.mozMatchesSelector || root.webkitMatchesSelector || root.msMatchesSelector;
-      return matches.call(node, selector);
-  },
-  closest = function(node, selector){
-    var matches = false;
-    do {
-      matches = matchesSelector(node, selector);
-    } while (!matches && (node = node.parentNode) && node.ownerDocument);
-    return matches ? node : false;
-  };
-
-  var abs = Math.abs,
-    noop = function(){},
-    defaults = {
-      containerElement: d.body,
-      noScroll: false,
-      activeClass: 'tappable-active',
-      onTap: noop,
-      onStart: noop,
-      onMove: noop,
-      onMoveOut: noop,
-      onMoveIn: noop,
-      onEnd: noop,
-      onCancel: noop,
-      allowClick: false,
-      boundMargin: 50,
-      noScrollDelay: 0,
-      activeClassDelay: 0,
-      inactiveClassDelay: 0
-    },
-    supportTouch = 'ontouchend' in document,
-    events = {
-      start: supportTouch ? 'touchstart' : 'mousedown',
-      move: supportTouch ? 'touchmove' : 'mousemove',
-      end: supportTouch ? 'touchend' : 'mouseup'
-    },
-    getTargetByCoords = function(x, y){
-      var el = d.elementFromPoint(x, y);
-      if (el.nodeType == 3) el = el.parentNode;
-      return el;
-    },
-    getTarget = function(e){
-      var el = e.target;
-      if (el) return el;
-      var touch = e.targetTouches[0];
-      return getTargetByCoords(touch.clientX, touch.clientY);
-    },
-    clean = function(str){
-      return str.replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
-    },
-    addClass = function(el, className){
-      if (!className) return;
-      if (el.classList){
-        el.classList.add(className);
-        return;
-      }
-      if (clean(el.className).indexOf(className) > -1) return;
-      el.className = clean(el.className + ' ' + className);
-    },
-    removeClass = function(el, className){
-      if (!className) return;
-      if (el.classList){
-        el.classList.remove(className);
-        return;
-      }
-      el.className = el.className.replace(new RegExp('(^|\\s)' + className + '(?:\\s|$)'), '$1');
-    };
-
-  w.tappable = function(selector, opts){
-    if (typeof opts == 'function') opts = { onTap: opts };
-    var options = {};
-    for (var key in defaults) options[key] = opts[key] || defaults[key];
-    
-    var el = options.containerElement,
-      startTarget,
-      elBound,
-      cancel = false,
-      moveOut = false,
-      activeClass = options.activeClass,
-      activeClassDelay = options.activeClassDelay,
-      activeClassTimeout,
-      inactiveClassDelay = options.inactiveClassDelay,
-      inactiveClassTimeout,
-      noScroll = options.noScroll,
-      noScrollDelay = options.noScrollDelay,
-      noScrollTimeout,
-      boundMargin = options.boundMargin;
-    
-    el.addEventListener(events.start, function(e){
-      var target = closest(getTarget(e), selector);
-      if (!target) return;
-      
-      if (activeClassDelay){
-        clearTimeout(activeClassTimeout);
-        activeClassTimeout = setTimeout(function(){
-          addClass(target, activeClass);
-        }, activeClassDelay);
-      } else {
-        addClass(target, activeClass);
-      }
-      if (inactiveClassDelay) clearTimeout(inactiveClassTimeout);
-      
-      startTarget = target;
-      cancel = false;
-      moveOut = false;
-      elBound = noScroll ? target.getBoundingClientRect() : null;
-      
-      if (noScrollDelay){
-        clearTimeout(noScrollTimeout);
-        noScroll = false; // set false first, then true after a delay
-        noScrollTimeout = setTimeout(function(){
-          noScroll = true;
-        }, noScrollDelay);
-      }
-      options.onStart.call(el, e, target);
-    }, false);
-    
-    el.addEventListener(events.move, function(e){
-      if (!startTarget) return;
-      
-      if (noScroll){
-        e.preventDefault();
-      } else {
-        clearTimeout(activeClassTimeout);
-      }
-      
-      var target = e.target,
-        x = e.clientX,
-        y = e.clientY;
-      if (!target || !x || !y){ // The event might have a target but no clientX/Y
-        var touch = e.changedTouches[0];
-        if (!x) x = touch.clientX;
-        if (!y) y = touch.clientY;
-        if (!target) target = getTargetByCoords(x, y);
-      }
-      
-      if (noScroll){
-        if (x>elBound.left-boundMargin && x<elBound.right+boundMargin && y>elBound.top-boundMargin && y<elBound.bottom+boundMargin){ // within element's boundary
-          moveOut = false;
-          addClass(startTarget, activeClass);
-          options.onMoveIn.call(el, e, target);
-        } else {
-          moveOut = true;
-          removeClass(startTarget, activeClass);
-          options.onMoveOut.call(el, e, target);
-        }
-      } else if (!cancel){
-        cancel = true;
-        removeClass(startTarget, activeClass);
-        options.onCancel.call(target, e);
-      }
-      
-      options.onMove.call(el, e, target);
-    }, false);
-    
-    el.addEventListener(events.end, function(e){
-      if (!startTarget) return;
-      
-      clearTimeout(activeClassTimeout);
-      if (inactiveClassDelay){
-        if (activeClassDelay && !cancel) addClass(startTarget, activeClass);
-        var activeTarget = startTarget;
-        inactiveClassTimeout = setTimeout(function(){
-          removeClass(activeTarget, activeClass);
-        }, inactiveClassDelay);
-      } else {
-        removeClass(startTarget, activeClass);
-      }
-      
-      options.onEnd.call(el, e, startTarget);
-      
-      var rightClick = e.which == 3 || e.button == 2;
-      if (!cancel && !moveOut && !rightClick){
-        var target = startTarget;
-        setTimeout(function(){
-          options.onTap.call(el, e, target);
-        }, 1);
-      }
-      
-      startTarget = null;
-    }, false);
-    
-    el.addEventListener('touchcancel', function(e){
-      if (!startTarget) return;
-      removeClass(startTarget, activeClass);
-      startTarget = null;
-      options.onCancel.call(el, e);
-    }, false);
-    
-    if (!options.allowClick) el.addEventListener('click', function(e){
-      var target = closest(e.target, selector);
-      if (target) e.preventDefault();
-    }, false);
-  };
-
-}));
 
 //
 // Generated on Fri Jun 08 2012 16:37:07 GMT+0900 (KST) by Nodejitsu, Inc (Using Codesurgeon).
@@ -1046,25 +594,265 @@ Router.prototype.mount = function(routes, path) {
 
 
 
-}(typeof process !== "undefined" && process.title ? module : window));(function(g) {
+}(typeof process !== "undefined" && process.title ? module : window));/*
+ *  Copyright 2011 Twitter, Inc.
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+var Hogan = {};
+
+(function (Hogan, useArrayBuffer) {
+  Hogan.Template = function (renderFunc, text, compiler, options) {
+    this.r = renderFunc || this.r;
+    this.c = compiler;
+    this.options = options;
+    this.text = text || '';
+    this.buf = (useArrayBuffer) ? [] : '';
+  }
+
+  Hogan.Template.prototype = {
+    // render: replaced by generated code.
+    r: function (context, partials, indent) { return ''; },
+
+    // variable escaping
+    v: hoganEscape,
+
+    // triple stache
+    t: coerceToString,
+
+    render: function render(context, partials, indent) {
+      return this.ri([context], partials || {}, indent);
+    },
+
+    // render internal -- a hook for overrides that catches partials too
+    ri: function (context, partials, indent) {
+      return this.r(context, partials, indent);
+    },
+
+    // tries to find a partial in the curent scope and render it
+    rp: function(name, context, partials, indent) {
+      var partial = partials[name];
+
+      if (!partial) {
+        return '';
+      }
+
+      if (this.c && typeof partial == 'string') {
+        partial = this.c.compile(partial, this.options);
+      }
+
+      return partial.ri(context, partials, indent);
+    },
+
+    // render a section
+    rs: function(context, partials, section) {
+      var tail = context[context.length - 1];
+
+      if (!isArray(tail)) {
+        section(context, partials, this);
+        return;
+      }
+
+      for (var i = 0; i < tail.length; i++) {
+        context.push(tail[i]);
+        section(context, partials, this);
+        context.pop();
+      }
+    },
+
+    // maybe start a section
+    s: function(val, ctx, partials, inverted, start, end, tags) {
+      var pass;
+
+      if (isArray(val) && val.length === 0) {
+        return false;
+      }
+
+      if (typeof val == 'function') {
+        val = this.ls(val, ctx, partials, inverted, start, end, tags);
+      }
+
+      pass = (val === '') || !!val;
+
+      if (!inverted && pass && ctx) {
+        ctx.push((typeof val == 'object') ? val : ctx[ctx.length - 1]);
+      }
+
+      return pass;
+    },
+
+    // find values with dotted names
+    d: function(key, ctx, partials, returnFound) {
+      var names = key.split('.'),
+          val = this.f(names[0], ctx, partials, returnFound),
+          cx = null;
+
+      if (key === '.' && isArray(ctx[ctx.length - 2])) {
+        return ctx[ctx.length - 1];
+      }
+
+      for (var i = 1; i < names.length; i++) {
+        if (val && typeof val == 'object' && names[i] in val) {
+          cx = val;
+          val = val[names[i]];
+        } else {
+          val = '';
+        }
+      }
+
+      if (returnFound && !val) {
+        return false;
+      }
+
+      if (!returnFound && typeof val == 'function') {
+        ctx.push(cx);
+        val = this.lv(val, ctx, partials);
+        ctx.pop();
+      }
+
+      return val;
+    },
+
+    // find values with normal names
+    f: function(key, ctx, partials, returnFound) {
+      var val = false,
+          v = null,
+          found = false;
+
+      for (var i = ctx.length - 1; i >= 0; i--) {
+        v = ctx[i];
+        if (v && typeof v == 'object' && key in v) {
+          val = v[key];
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        return (returnFound) ? false : "";
+      }
+
+      if (!returnFound && typeof val == 'function') {
+        val = this.lv(val, ctx, partials);
+      }
+
+      return val;
+    },
+
+    // higher order templates
+    ho: function(val, cx, partials, text, tags) {
+      var compiler = this.c;
+      var options = this.options;
+      options.delimiters = tags;
+      var text = val.call(cx, text);
+      text = (text == null) ? String(text) : text.toString();
+      this.b(compiler.compile(text, options).render(cx, partials));
+      return false;
+    },
+
+    // template result buffering
+    b: (useArrayBuffer) ? function(s) { this.buf.push(s); } :
+                          function(s) { this.buf += s; },
+    fl: (useArrayBuffer) ? function() { var r = this.buf.join(''); this.buf = []; return r; } :
+                           function() { var r = this.buf; this.buf = ''; return r; },
+
+    // lambda replace section
+    ls: function(val, ctx, partials, inverted, start, end, tags) {
+      var cx = ctx[ctx.length - 1],
+          t = null;
+
+      if (!inverted && this.c && val.length > 0) {
+        return this.ho(val, cx, partials, this.text.substring(start, end), tags);
+      }
+
+      t = val.call(cx);
+
+      if (typeof t == 'function') {
+        if (inverted) {
+          return true;
+        } else if (this.c) {
+          return this.ho(t, cx, partials, this.text.substring(start, end), tags);
+        }
+      }
+
+      return t;
+    },
+
+    // lambda replace variable
+    lv: function(val, ctx, partials) {
+      var cx = ctx[ctx.length - 1];
+      var result = val.call(cx);
+
+      if (typeof result == 'function') {
+        result = coerceToString(result.call(cx));
+        if (this.c && ~result.indexOf("{\u007B")) {
+          return this.c.compile(result, this.options).render(cx, partials);
+        }
+      }
+
+      return coerceToString(result);
+    }
+
+  };
+
+  var rAmp = /&/g,
+      rLt = /</g,
+      rGt = />/g,
+      rApos =/\'/g,
+      rQuot = /\"/g,
+      hChars =/[&<>\"\']/;
+
+
+  function coerceToString(val) {
+    return String((val === null || val === undefined) ? '' : val);
+  }
+
+  function hoganEscape(str) {
+    str = coerceToString(str);
+    return hChars.test(str) ?
+      str
+        .replace(rAmp,'&amp;')
+        .replace(rLt,'&lt;')
+        .replace(rGt,'&gt;')
+        .replace(rApos,'&#39;')
+        .replace(rQuot, '&quot;') :
+      str;
+  }
+
+  var isArray = Array.isArray || function(a) {
+    return Object.prototype.toString.call(a) === '[object Array]';
+  };
+
+})(typeof exports !== 'undefined' ? exports : Hogan);
+
+(function(g) {
 
 'use strict';
 
-var feed_uri = 'http://api.flickr.com/services/feeds/photos_public.gne?format=rss_200';
+var feed_uri = 'flickr.rss';
 
 var parse = g.ax ? ax.util.parseXML : function(s) {
     return new DOMParser().parseFromString(s, 'text/xml');
 };
 
-var xhr = (g.ax && g.ax.ext && g.ax.ext.net) ? function(url, cb) { g.ax.ext.net.get(url, function(o) { cb(o.data); }); }
-    : function(url, cb) {
-        var _xhr = new XMLHttpRequest();
-        _xhr.onload = function() {
-            cb(_xhr.responseText);
-        };
-        _xhr.open('GET', url);
-        _xhr.send();
+var xhr = function(url, cb) {
+    var _xhr = new XMLHttpRequest();
+    _xhr.onload = function() {
+        cb(_xhr.responseText);
     };
+    _xhr.open('GET', url);
+    _xhr.send();
+};
 
 function Item(_item) {
     this._item = _item;
@@ -1120,3 +908,215 @@ g.myapi = {
 };
 
 })(this);
+(function(root, factory) {
+  // Set up Tappable appropriately for the environment.
+  if ( typeof define === 'function' && define.amd ) {
+    // AMD
+    define('tappable', [], function() {
+      factory( root, window.document );
+      return root.tappable;
+    });
+  } else {
+    // Browser global scope
+    factory( root, window.document );
+  }
+}(this, function ( w, d ) {
+
+  var matchesSelector = function(node, selector){
+      var root = d.documentElement,
+        matches = root.matchesSelector || root.mozMatchesSelector || root.webkitMatchesSelector || root.msMatchesSelector;
+      return matches.call(node, selector);
+  },
+  closest = function(node, selector){
+    var matches = false;
+    do {
+      matches = matchesSelector(node, selector);
+    } while (!matches && (node = node.parentNode) && node.ownerDocument);
+    return matches ? node : false;
+  };
+
+  var abs = Math.abs,
+    noop = function(){},
+    defaults = {
+      containerElement: d.body,
+      noScroll: false,
+      activeClass: 'tappable-active',
+      onTap: noop,
+      onStart: noop,
+      onMove: noop,
+      onMoveOut: noop,
+      onMoveIn: noop,
+      onEnd: noop,
+      onCancel: noop,
+      allowClick: false,
+      boundMargin: 50,
+      noScrollDelay: 0,
+      activeClassDelay: 0,
+      inactiveClassDelay: 0
+    },
+    supportTouch = 'ontouchend' in document,
+    events = {
+      start: supportTouch ? 'touchstart' : 'mousedown',
+      move: supportTouch ? 'touchmove' : 'mousemove',
+      end: supportTouch ? 'touchend' : 'mouseup'
+    },
+    getTargetByCoords = function(x, y){
+      var el = d.elementFromPoint(x, y);
+      if (el.nodeType == 3) el = el.parentNode;
+      return el;
+    },
+    getTarget = function(e){
+      var el = e.target;
+      if (el) return el;
+      var touch = e.targetTouches[0];
+      return getTargetByCoords(touch.clientX, touch.clientY);
+    },
+    clean = function(str){
+      return str.replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+    },
+    addClass = function(el, className){
+      if (!className) return;
+      if (el.classList){
+        el.classList.add(className);
+        return;
+      }
+      if (clean(el.className).indexOf(className) > -1) return;
+      el.className = clean(el.className + ' ' + className);
+    },
+    removeClass = function(el, className){
+      if (!className) return;
+      if (el.classList){
+        el.classList.remove(className);
+        return;
+      }
+      el.className = el.className.replace(new RegExp('(^|\\s)' + className + '(?:\\s|$)'), '$1');
+    };
+
+  w.tappable = function(selector, opts){
+    if (typeof opts == 'function') opts = { onTap: opts };
+    var options = {};
+    for (var key in defaults) options[key] = opts[key] || defaults[key];
+    
+    var el = options.containerElement,
+      startTarget,
+      elBound,
+      cancel = false,
+      moveOut = false,
+      activeClass = options.activeClass,
+      activeClassDelay = options.activeClassDelay,
+      activeClassTimeout,
+      inactiveClassDelay = options.inactiveClassDelay,
+      inactiveClassTimeout,
+      noScroll = options.noScroll,
+      noScrollDelay = options.noScrollDelay,
+      noScrollTimeout,
+      boundMargin = options.boundMargin;
+    
+    el.addEventListener(events.start, function(e){
+      var target = closest(getTarget(e), selector);
+      if (!target) return;
+      
+      if (activeClassDelay){
+        clearTimeout(activeClassTimeout);
+        activeClassTimeout = setTimeout(function(){
+          addClass(target, activeClass);
+        }, activeClassDelay);
+      } else {
+        addClass(target, activeClass);
+      }
+      if (inactiveClassDelay) clearTimeout(inactiveClassTimeout);
+      
+      startTarget = target;
+      cancel = false;
+      moveOut = false;
+      elBound = noScroll ? target.getBoundingClientRect() : null;
+      
+      if (noScrollDelay){
+        clearTimeout(noScrollTimeout);
+        noScroll = false; // set false first, then true after a delay
+        noScrollTimeout = setTimeout(function(){
+          noScroll = true;
+        }, noScrollDelay);
+      }
+      options.onStart.call(el, e, target);
+    }, false);
+    
+    el.addEventListener(events.move, function(e){
+      if (!startTarget) return;
+      
+      if (noScroll){
+        e.preventDefault();
+      } else {
+        clearTimeout(activeClassTimeout);
+      }
+      
+      var target = e.target,
+        x = e.clientX,
+        y = e.clientY;
+      if (!target || !x || !y){ // The event might have a target but no clientX/Y
+        var touch = e.changedTouches[0];
+        if (!x) x = touch.clientX;
+        if (!y) y = touch.clientY;
+        if (!target) target = getTargetByCoords(x, y);
+      }
+      
+      if (noScroll){
+        if (x>elBound.left-boundMargin && x<elBound.right+boundMargin && y>elBound.top-boundMargin && y<elBound.bottom+boundMargin){ // within element's boundary
+          moveOut = false;
+          addClass(startTarget, activeClass);
+          options.onMoveIn.call(el, e, target);
+        } else {
+          moveOut = true;
+          removeClass(startTarget, activeClass);
+          options.onMoveOut.call(el, e, target);
+        }
+      } else if (!cancel){
+        cancel = true;
+        removeClass(startTarget, activeClass);
+        options.onCancel.call(target, e);
+      }
+      
+      options.onMove.call(el, e, target);
+    }, false);
+    
+    el.addEventListener(events.end, function(e){
+      if (!startTarget) return;
+      
+      clearTimeout(activeClassTimeout);
+      if (inactiveClassDelay){
+        if (activeClassDelay && !cancel) addClass(startTarget, activeClass);
+        var activeTarget = startTarget;
+        inactiveClassTimeout = setTimeout(function(){
+          removeClass(activeTarget, activeClass);
+        }, inactiveClassDelay);
+      } else {
+        removeClass(startTarget, activeClass);
+      }
+      
+      options.onEnd.call(el, e, startTarget);
+      
+      var rightClick = e.which == 3 || e.button == 2;
+      if (!cancel && !moveOut && !rightClick){
+        var target = startTarget;
+        setTimeout(function(){
+          options.onTap.call(el, e, target);
+        }, 1);
+      }
+      
+      startTarget = null;
+    }, false);
+    
+    el.addEventListener('touchcancel', function(e){
+      if (!startTarget) return;
+      removeClass(startTarget, activeClass);
+      startTarget = null;
+      options.onCancel.call(el, e);
+    }, false);
+    
+    if (!options.allowClick) el.addEventListener('click', function(e){
+      var target = closest(e.target, selector);
+      if (target) e.preventDefault();
+    }, false);
+  };
+
+}));
