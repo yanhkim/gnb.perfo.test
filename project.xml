@@ -5,7 +5,7 @@
           <name>gnb perfo test</name>
           <content src="index.html"/>
           <icon src="widget-icon.png"/>
-	<feature name="http://wacapps.net/api/deviceapis"/>
+          <feature name="http://wacapps.net/api/deviceapis"/>
           <feature name="http://appspresso.com/api/ax.ext.net"/>
      </widget>
      <wac min-version="2.0"/>
@@ -15,7 +15,7 @@
           <preference name="maxSdkVersion" value=""/>
           <preference name="installLocation" value="internalOnly"/>
           <preference name="activity.theme" value="0"/>
-          <preference name="orientation" value="0"/>
+          <preference name="orientation" value="1"/>
           <preference name="targetSdkVersion" value="7"/>
           <preference name="minSdkVersion" value="7"/>
           <preference name="webview.cache.enable" value="true"/>
@@ -32,7 +32,7 @@
           <preference name="targetDevice" value="1"/>
           <preference name="webview.cache.enable" value="true"/>
           <preference name="ScalesPageToFit" value="false"/>
-          <preference name="application.orientation.supported" value="1,2,3,4"/>
+          <preference name="application.orientation.supported" value="1"/>
           <preference name="exitOnSuspend" value="false"/>
           <preference name="initOrientation" value="1"/>
           <preference name="uiPrerenderedIcon" value="false"/>
@@ -40,6 +40,6 @@
           <preference name="uiStatusBarStyle" value="UIStatusBarStyleDefault"/>
           <sign_info/>
      </iphone>
-<plugin id="ax.ext.net"/>
+     <plugin id="ax.ext.net"/>
      <plugin id="deviceapis"/>
 </project>
