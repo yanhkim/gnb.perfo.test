@@ -72,6 +72,9 @@ fs.readdir(inpath, function(e, files) {
     writer.minify(argv.release);
 
     files.forEach(function(file) {
+        if (!/\.mustache$/.test(file))
+            return;
+
         var _path = path.join(inpath, file);
         writer.job(_path);
 
