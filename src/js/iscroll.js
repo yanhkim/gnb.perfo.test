@@ -107,7 +107,11 @@ var m = Math,
 			onDestroy: null,
 			onZoomStart: null,
 			onZoom: null,
-			onZoomEnd: null
+			onZoomEnd: null,
+			onAnimationStart: null,
+			onAnimation: null,
+			onAnimationEnd: null,
+			onPositionChange: null
 		};
 
 		// User defined options
@@ -275,6 +279,8 @@ iScroll.prototype = {
 
 		this._scrollbarPos('h');
 		this._scrollbarPos('v');
+
+		if (this.options.onPositionChange) this.options.onPositionChange.call(this, x, y);
 	},
 
 	_scrollbarPos: function (dir, hidden) {
@@ -729,6 +735,8 @@ iScroll.prototype = {
 			return;
 		}
 
+		if (that.options.onAnimationStart) that.options.onAnimationStart.call(that);
+
 		animate = function () {
 			var now = Date.now(),
 				newX, newY;
@@ -741,6 +749,8 @@ iScroll.prototype = {
 				return;
 			}
 
+			if (!firstCall && that.options.onAnimation) that.options.onAnimation.call(that);
+
 			now = (now - startTime) / step.time - 1;
 			easeOut = m.sqrt(1 - now * now);
 			newX = (step.x - startX) * easeOut + startX;
@@ -749,7 +759,9 @@ iScroll.prototype = {
 			if (that.animating) that.aniTime = nextFrame(animate);
 		};
 
+		var firstCall = true;
 		animate();
+		firstCall = false;
 	},
 
 	_transitionTime: function (time) {
