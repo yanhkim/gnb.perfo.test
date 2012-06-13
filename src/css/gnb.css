@@ -65,80 +65,80 @@ body {
     text-align: left;
 }
 .page > .scroller {
-	-webkit-box-flex: 1;
-	-moz-box-flex: 1;
-	box-flex: 1;
-	overflow: auto;
-	-webkit-overflow-scrolling: touch;
-	background-color: #e2e7ed;
-	display: -webkit-box;
-	display: -moz-box;
-	display: box;
-	-webkit-box-orient: vertical;
-	-moz-box-orient: vertical;
-	box-orient: vertical;
+    -webkit-box-flex: 1;
+    -moz-box-flex: 1;
+    box-flex: 1;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    background-color: #e2e7ed;
+    display: -webkit-box;
+    display: -moz-box;
+    display: box;
+    -webkit-box-orient: vertical;
+    -moz-box-orient: vertical;
+    box-orient: vertical;
     position: relative;
-	height: 100%;
+    height: 100%;
 }
 #listview {
-	margin: 0;
-	padding: 0;
-	list-style: none;
-	background-color: #fff;
-	border-bottom: 1px solid #e0e0e0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    background-color: #fff;
+    border-bottom: 1px solid #e0e0e0;
 }
 .feed {
-	display: block;
-	border-top: 1px solid #e0e0e0;
-	padding: 0;
-	display: -webkit-box;
-	display: -moz-box;
-	display: box;
-	width: 100%;
+    display: block;
+    border-top: 1px solid #e0e0e0;
+    padding: 0;
+    display: -webkit-box;
+    display: -moz-box;
+    display: box;
+    width: 100%;
 }
 .feed > a {
-	text-decoration: none;
+    text-decoration: none;
 }
 .feed .container {
-	font-size: 15px;
-	line-height: 1.3em;
-	color: #000;
-	display: block;
-	padding: 9px 12px;
+    font-size: 15px;
+    line-height: 1.3em;
+    color: #000;
+    display: block;
+    padding: 9px 12px;
     min-height: 55px;
     position: relative;
-	-webkit-tap-highlight-color: rgba(0,0,0,0);
-	display: -webkit-box;
-	display: -moz-box;
-	display: box;
-	width: 100%;
-	-webkit-box-flex: 1;
-	-moz-box-flex: 1;
-	box-flex: 1;
-	-webkit-box-sizing: border-box;
-	-moz-box-sizing: border-box;
-	box-sizing: border-box;
-	background-image: -webkit-gradient(linear, left top, left bottom, from(#4286f5), to(#194fdb));
-	background-image: -webkit-linear-gradient(top, #4286f5, #194fdb);
-	background-image: -moz-linear-gradient(top, #4286f5, #194fdb);
-	background-image: -ms-linear-gradient(top, #4286f5, #194fdb);
-	background-image: -o-linear-gradient(top, #4286f5, #194fdb);
-	background-image: linear-gradient(top, #4286f5, #194fdb);
-	background-position: -10px 0;
-	background-repeat: no-repeat;
-	-webkit-background-size: 10px 100%;
-	-moz-background-size: 10px 100%;
-	-ms-background-size: 10px 100%;
-	-o-background-size: 10px 100%;
-	background-size: 10px 100%;
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+    display: -webkit-box;
+    display: -moz-box;
+    display: box;
+    width: 100%;
+    -webkit-box-flex: 1;
+    -moz-box-flex: 1;
+    box-flex: 1;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#4286f5), to(#194fdb));
+    background-image: -webkit-linear-gradient(top, #4286f5, #194fdb);
+    background-image: -moz-linear-gradient(top, #4286f5, #194fdb);
+    background-image: -ms-linear-gradient(top, #4286f5, #194fdb);
+    background-image: -o-linear-gradient(top, #4286f5, #194fdb);
+    background-image: linear-gradient(top, #4286f5, #194fdb);
+    background-position: -10px 0;
+    background-repeat: no-repeat;
+    -webkit-background-size: 10px 100%;
+    -moz-background-size: 10px 100%;
+    -ms-background-size: 10px 100%;
+    -o-background-size: 10px 100%;
+    background-size: 10px 100%;
 }
 .feed > a.tappable-active .container {
-	color: #fff;
-	background-color: #4286f5;
-	background-repeat: repeat-x;
+    color: #fff;
+    background-color: #4286f5;
+    background-repeat: repeat-x;
 }
 .feed > a.tappable-active .container * {
-	color: #fff;
+    color: #fff;
 }
 .feed .content {
     margin-left: 60px;
@@ -164,48 +164,48 @@ body {
 }
 
 .header-back-button {
-	position: absolute;
-	top: 0;
-	padding: 7px 5px;
-	-webkit-tap-highlight-color: rgba(0,0,0,0);
-	line-height: 1em;
+    position: absolute;
+    top: 0;
+    padding: 7px 5px;
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+    line-height: 1em;
 }
 .header-back-button button{
-	pointer-events: none;
-	-webkit-box-sizing: border-box;
-	-moz-box-sizing: border-box;
-	box-sizing: border-box;
-	min-width: 50px;
-	height: 30px;
-	line-height: 25px;
-	font-weight: bold;
-	font-size: 12px;
-	text-align: center;
-	color: #fff;
-	text-shadow: 0 -1px rgba(0,0,0,.6);
-	margin: 0;
-	text-decoration: none;
-	-webkit-background-size: 0 0;
-	-moz-background-size: 0 0;
-	-ms-background-size: 0 0;
-	-o-background-size: 0 0;
-	background-size: 0 0;
+    pointer-events: none;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    min-width: 50px;
+    height: 30px;
+    line-height: 25px;
+    font-weight: bold;
+    font-size: 12px;
+    text-align: center;
+    color: #fff;
+    text-shadow: 0 -1px rgba(0,0,0,.6);
+    margin: 0;
+    text-decoration: none;
+    -webkit-background-size: 0 0;
+    -moz-background-size: 0 0;
+    -ms-background-size: 0 0;
+    -o-background-size: 0 0;
+    background-size: 0 0;
     background: transparent url(/images/button-active.png) no-repeat;
-	padding: 0 4px 0 0;
-	border-width: 2px 4px 2px 13px;
-	-webkit-border-image: url(/images/back-button.png) 4 8 4 26;
-	-moz-border-image: url(/images/back-button.png) 4 8 4 26 fill;
-	-ms-border-image: url(/images/back-button.png) 4 8 4 26 fill;
-	-o-border-image: url(/images/back-button.png) 4 8 4 26 fill;
-/*	border-image: url(/images/back-button.png) 4 8 4 26 fill;*/
-	background-image: url(/images/back-button-active.png);
+    padding: 0 4px 0 0;
+    border-width: 2px 4px 2px 13px;
+    -webkit-border-image: url(/images/back-button.png) 4 8 4 26;
+    -moz-border-image: url(/images/back-button.png) 4 8 4 26 fill;
+    -ms-border-image: url(/images/back-button.png) 4 8 4 26 fill;
+    -o-border-image: url(/images/back-button.png) 4 8 4 26 fill;
+/*  border-image: url(/images/back-button.png) 4 8 4 26 fill;*/
+    background-image: url(/images/back-button-active.png);
 }
 .header-back-button.tappable-active button {
-	-webkit-border-image: url(/images/back-button-active.png) 4 8 4 26;
-	-moz-border-image: url(/images/back-button-active.png) 4 8 4 26 fill;
-	-ms-border-image: url(/images/back-button-active.png) 4 8 4 26 fill;
-	-o-border-image: url(/images/back-button-active.png) 4 8 4 26 fill;
-/*	border-image: url(/images/back-button-active.png) 4 8 4 26 fill;*/
+    -webkit-border-image: url(/images/back-button-active.png) 4 8 4 26;
+    -moz-border-image: url(/images/back-button-active.png) 4 8 4 26 fill;
+    -ms-border-image: url(/images/back-button-active.png) 4 8 4 26 fill;
+    -o-border-image: url(/images/back-button-active.png) 4 8 4 26 fill;
+/*  border-image: url(/images/back-button-active.png) 4 8 4 26 fill;*/
 }
 
 #page-detail .detail {
