@@ -3,7 +3,7 @@
      <!-- On this tab, you can not directly modify the source. -->
      <widget id="http://test.perfo.gnb.ax.example.com/gnb.perfo.test" version="1.0.0">
           <name>gnb perfo test</name>
-          <content src="index.html"/>
+          <content src="index-origin.html"/>
           <icon src="widget-icon.png"/>
           <feature name="http://wacapps.net/api/deviceapis"/>
           <feature name="http://appspresso.com/api/ax.ext.net"/>
