@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>gnb performance test landing page</title>
+<style>
+body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 16px;
+}
+.modes > div {
+    float: left;
+    margin: 0 30px;
+}
+.modes .imagewrap {
+    border: 1px solid black;
+    padding: 7px;
+    width: 120px;
+}
+</style>
+
+</head>
+
+<body>
+<h1>GNB performance test</h1>
+
+<div class="modes">
+    <div>
+        <h3>unmodified iScroll</h3>
+        <p>scan below image or:</p>
+        <div class="imagewrap"><img src="gnb-unmodified.png" width="120" height="120"></div>
+        <p>type <a href="http://goo.gl/Qr6Mg" target="_blank" class="link">goo.gl/Qr6Mg</a>.</p>
+    </div>
+    <div>
+        <h3>with dynamic unloader</h3>
+        <p>scan below image or:</p>
+        <div class="imagewrap"><img src="gnb-unloader.png" width="120" height="120"></div>
+        <p>type <a href="http://goo.gl/7KhPP" target="_blank" class="link">goo.gl/7KhPP</a>.</p>
+    </div>
+</div>
+<script>
+function opener(evt) {
+    evt.preventDefault();
+    var url = this.getAttribute('href');
+    window.open(url, '', 'width=320, height=480, location=no, menubar=no, resizable=no, status=no, toolbar=no');
+    return false;
+}
+
+[].slice.call(document.querySelectorAll('a.link')).forEach(function(link) {
+    link.addEventListener('click', opener);
+});
+</script>
+</body>
+
+</html>
