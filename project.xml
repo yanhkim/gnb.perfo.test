@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project xmlns="http://www.appspresso.com/ns/app" version="1.1">
      <!-- On this tab, you can not directly modify the source. -->
-     <widget id="http://test.perfo.gnb.ax.example.com/gnb.perfo.test" version="1.0.0">
-          <name>gnb perfo test</name>
+     <widget id="http://test.perfo.gnb.ax.example.com/gnb.perfo.test.unmodified" version="1.0.0">
+          <name>gnb perfo test unmodified</name>
           <content src="index-origin.html"/>
           <icon src="widget-icon.png"/>
           <feature name="http://wacapps.net/api/deviceapis"/>
           <feature name="http://appspresso.com/api/ax.ext.net"/>
      </widget>
      <wac min-version="2.0"/>
-     <android id="com.example.ax.gnb.perfo.test" version="1.0.0">
+     <android id="com.example.ax.gnb.perfo.test.unmodified" version="1.0.0">
           <preference name="activity" value="Activity"/>
           <preference name="versionCode" value="1"/>
           <preference name="maxSdkVersion" value=""/>
@@ -27,7 +27,7 @@
           <preference name="splash.orientation" value="0"/>
           <preference name="splash.duration.min" value="0"/>
      </android>
-     <iphone id="com.example.ax.gnb.perfo.test" version="1.0.0">
+     <iphone id="com.example.ax.gnb.perfo.test.unmodified" version="1.0.0">
           <preference name="buildVersionNumber" value="1"/>
           <preference name="targetDevice" value="1"/>
           <preference name="webview.cache.enable" value="true"/>
