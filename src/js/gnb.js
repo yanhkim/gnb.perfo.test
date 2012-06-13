@@ -78,6 +78,9 @@ function loadFeeds() {
         $('listview').innerHTML = html;
 
         // TODO iscroll setup
+        var wrapper = d.querySelector('#page-master .scroller'),
+            unloader = new Unloader(wrapper, 'li');
+
         masterScroll = new iScroll(d.querySelector('#page-master .scroller'), {
             onAnimationStart: function() {
                 fpschecker.start();
@@ -91,6 +94,12 @@ function loadFeeds() {
             },
             onAnimationEnd: function() {
                 fpschecker.end();
+            },
+            onRefresh: function() {
+                unloader.setup(this.x, this.y);
+            },
+            onPositionChange: function(x, y) {
+                unloader.onmove(x, y);
             }
         });
     });
