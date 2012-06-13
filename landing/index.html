@@ -30,15 +30,25 @@ body {
         <p>scan below image or:</p>
         <div class="imagewrap"><img src="gnb-unmodified.png" width="120" height="120"></div>
         <p>type <a href="http://goo.gl/Qr6Mg" target="_blank" class="link">goo.gl/Qr6Mg</a>.</p>
+        <p>download <a href="https://github.com/yanhkim/gnb.perfo.test/zipball/normal">appspresso project</a>.</p>
     </div>
     <div>
         <h3>with dynamic unloader</h3>
         <p>scan below image or:</p>
         <div class="imagewrap"><img src="gnb-unloader.png" width="120" height="120"></div>
         <p>type <a href="http://goo.gl/7KhPP" target="_blank" class="link">goo.gl/7KhPP</a>.</p>
+        <p>download <a href="https://github.com/yanhkim/gnb.perfo.test/zipball/master">appspresso project</a>.</p>
     </div>
 </div>
 <script>
+var mobile = (function() {
+    var ua = navigator.userAgent;
+    if (/iphone|ipad/i.test(ua) || /android/i.test(ua))
+        return true;
+
+    return false;
+})();
+
 function opener(evt) {
     evt.preventDefault();
     var url = this.getAttribute('href');
@@ -46,9 +56,11 @@ function opener(evt) {
     return false;
 }
 
-[].slice.call(document.querySelectorAll('a.link')).forEach(function(link) {
-    link.addEventListener('click', opener);
-});
+if (!mobile) {
+    [].slice.call(document.querySelectorAll('a.link')).forEach(function(link) {
+        link.addEventListener('click', opener);
+    });
+}
 </script>
 </body>
 
