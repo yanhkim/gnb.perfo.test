@@ -59,10 +59,13 @@ body {
 .page > header h1 {
     padding: 0 65px;
 }
-.page footer #fps {
-    width: 60px;
+.page footer .fps {
+    font-size: 10pt;
+}
+.page footer .fps .val {
     display: inline-block;
-    text-align: left;
+    width: 40px;
+    text-align: right;
 }
 .page > .scroller {
     -webkit-box-flex: 1;
