@@ -57,6 +57,10 @@ var $ = function(i) { return d.getElementById(i); },
     loading = false,
     masterScroll, detailScroll;
 
+function fillfps(sel, val) {
+    $(sel).textContent = Math.floor(val * 100) / 100;
+}
+
 function loadFeeds() {
     if (loading)
         return;
@@ -89,7 +93,14 @@ function loadFeeds() {
                 if (!fps) {
                     return;
                 }   
-                $('fps').textContent = Math.floor(fps * 100) / 100;
+                var fps = fpschecker.tick();
+                if (!fps) {
+                    return;
+                }
+                fillfps('fps-cur', fps.cur);
+                fillfps('fps-min', fps.min);
+                fillfps('fps-avg', fps.avg);
+                fillfps('fps-max', fps.max);
             },
             onAnimationEnd: function() {
                 fpschecker.end();
